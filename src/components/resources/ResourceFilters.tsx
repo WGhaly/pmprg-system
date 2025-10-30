@@ -44,7 +44,7 @@ export default function ResourceFilters({ filters, onFiltersChange, onClose }: R
         setLoading(true);
         
         // Load skills
-        const skillsResponse = await fetch('/api/skills');
+        const skillsResponse = await fetch('/api/master-data/skills');
         if (skillsResponse.ok) {
           const skills = await skillsResponse.json();
           setAvailableSkills(skills);

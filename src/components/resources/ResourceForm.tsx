@@ -82,7 +82,7 @@ export default function ResourceForm({ resource, onSave, onCancel }: ResourceFor
     const fetchSkills = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/skills');
+        const response = await fetch('/api/master-data/skills');
         if (!response.ok) throw new Error('Failed to fetch skills');
         const data = await response.json();
         setAvailableSkills(data);
