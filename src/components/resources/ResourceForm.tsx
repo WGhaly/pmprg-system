@@ -96,7 +96,7 @@ export default function ResourceForm({ resource, onSave, onCancel }: ResourceFor
     };
 
     fetchSkills();
-  }, [toast]);
+  }, []); // Remove toast dependency to prevent infinite loop
 
   // Initialize form data
   useEffect(() => {
