@@ -200,12 +200,12 @@ export default function ResourceAllocationStep({ register, errors, watch, setVal
         const preview = await previewResponse.json();
         
         // Transform project blocks into resource requirements
-        const requirements: ProjectRequirement[] = preview.blocks.map((block: any) => ({
-          blockId: block.id,
-          blockName: block.name,
-          blockCode: block.code,
-          duration: block.duration,
-          requiredSkills: block.requiredSkills || [],
+        const requirements: ProjectRequirement[] = preview.projectPlan.blocks.map((block: any) => ({
+          blockId: block.blockId || block.id,
+          blockName: block.blockName || block.name,
+          blockCode: block.blockCode || block.code,
+          duration: block.plannedDurationWeeks || block.duration,
+          requiredSkills: block.skillsMix || block.requiredSkills || [],
           suggestedResources: [],
           allocatedResources: [],
         }));
