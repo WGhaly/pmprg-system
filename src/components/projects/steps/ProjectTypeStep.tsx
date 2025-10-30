@@ -209,18 +209,22 @@ export default function ProjectTypeStep({ register, errors, watch, setValue }: P
                 
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-2">Blocks in this tier:</p>
-                  <div className="space-y-1">
-                    {tierDetails.blocks.map((block: any, index: number) => (
-                      <div key={block.id} className="flex items-center justify-between text-sm">
-                        <div className="flex items-center">
-                          <span className="w-6 h-6 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center text-xs font-medium mr-2">
-                            {index + 1}
-                          </span>
-                          <span className="text-gray-900">{block.block.name}</span>
+                  <div className="overflow-x-auto">
+                    <div className="flex gap-3 pb-2 min-w-max">
+                      {tierDetails.blocks.map((block: any, index: number) => (
+                        <div key={block.id} className="flex-shrink-0 bg-white border border-gray-200 rounded-lg p-3 min-w-[180px]">
+                          <div className="flex items-center mb-2">
+                            <span className="w-6 h-6 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center text-xs font-medium mr-2">
+                              {index + 1}
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 truncate">{block.block.name}</span>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Duration: {block.durationWeeks} week{block.durationWeeks !== 1 ? 's' : ''}
+                          </div>
                         </div>
-                        <span className="text-gray-500">{block.durationWeeks}w</span>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

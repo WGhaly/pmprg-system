@@ -84,6 +84,8 @@ export default function ResourceAllocationStep({ register, errors, watch, setVal
   const [selectedSkillFilter, setSelectedSkillFilter] = useState('');
   const [selectedTeamFilter, setSelectedTeamFilter] = useState('');
   const [autoAssignMode, setAutoAssignMode] = useState(false);
+  const [showManualSelection, setShowManualSelection] = useState(false);
+  const [resourceSearchTerm, setResourceSearchTerm] = useState('');
 
   // Toast hook for notifications
   const { toast, dismissToast } = useToast();
@@ -200,15 +202,39 @@ export default function ResourceAllocationStep({ register, errors, watch, setVal
         const preview = await previewResponse.json();
         
         // Transform project blocks into resource requirements
-        const requirements: ProjectRequirement[] = preview.projectPlan.blocks.map((block: any) => ({
-          blockId: block.blockId || block.id,
-          blockName: block.blockName || block.name,
-          blockCode: block.blockCode || block.code,
-          duration: block.plannedDurationWeeks || block.duration,
-          requiredSkills: block.skillsMix || block.requiredSkills || [],
-          suggestedResources: [],
-          allocatedResources: [],
-        }));
+        const requirements: ProjectRequirement[] = preview.projectPlan.blocks.map((block: any) => {
+          // Handle skillsMix - it might be a JSON string, object, or null
+          let requiredSkills: any[] = [];
+          if (block.skillsMix) {
+            try {
+              const skillsMix = typeof block.skillsMix === 'string' 
+                ? JSON.parse(block.skillsMix) 
+                : block.skillsMix;
+              
+              // Convert skillsMix object to array format
+              if (typeof skillsMix === 'object' && skillsMix !== null) {
+                requiredSkills = Object.entries(skillsMix).map(([skillCode, percentage]) => ({
+                  skillCode,
+                  skillName: skillCode, // We'll resolve this later
+                  percentage: percentage as number,
+                  minimumLevel: 3, // Default minimum level
+                }));
+              }
+            } catch (e) {
+              console.warn('Failed to parse skillsMix for block:', block.blockCode, e);
+            }
+          }
+
+          return {
+            blockId: block.blockId || block.id,
+            blockName: block.blockName || block.name,
+            blockCode: block.blockCode || block.code,
+            duration: block.plannedDurationWeeks || block.duration,
+            requiredSkills,
+            suggestedResources: [],
+            allocatedResources: [],
+          };
+        });
 
         setProjectRequirements(requirements);
         toast.success(`Project structure loaded: ${requirements.length} blocks requiring resources`);
@@ -235,20 +261,30 @@ export default function ResourceAllocationStep({ register, errors, watch, setVal
       for (const requirement of requirements) {
         const blockRecommendations = availableResources
           .map(resource => {
-            // Calculate skill match score
-            const skillMatches = requirement.requiredSkills.map(reqSkill => {
-              const resourceSkill = resource.skills.find(s => s.skillId === reqSkill.skillId);
-              return {
-                skillName: reqSkill.skillName,
-                requiredLevel: reqSkill.minimumLevel,
-                resourceLevel: resourceSkill?.level || 0,
-                isMatch: resourceSkill ? resourceSkill.level >= reqSkill.minimumLevel : false,
-              };
-            });
+            // Calculate skill match score - handle empty or undefined requiredSkills
+            let skillMatchScore = 50; // Default score when no skills required
+            let skillMatches: any[] = [];
+            
+            if (requirement.requiredSkills && requirement.requiredSkills.length > 0) {
+              skillMatches = requirement.requiredSkills.map(reqSkill => {
+                // Find matching skill by skillId or skillName
+                const resourceSkill = resource.skills.find(s => 
+                  s.skillId === reqSkill.skillId || 
+                  s.skillName === reqSkill.skillName
+                );
+                
+                return {
+                  skillName: reqSkill.skillName,
+                  requiredLevel: reqSkill.minimumLevel || 3,
+                  resourceLevel: resourceSkill?.level || 0,
+                  isMatch: resourceSkill ? resourceSkill.level >= (reqSkill.minimumLevel || 3) : false,
+                };
+              });
 
-            const matchingSkills = skillMatches.filter(sm => sm.isMatch).length;
-            const totalRequiredSkills = requirement.requiredSkills.length;
-            const skillMatchScore = totalRequiredSkills > 0 ? (matchingSkills / totalRequiredSkills) * 100 : 50;
+              const matchingSkills = skillMatches.filter(sm => sm.isMatch).length;
+              const totalRequiredSkills = requirement.requiredSkills.length;
+              skillMatchScore = totalRequiredSkills > 0 ? (matchingSkills / totalRequiredSkills) * 100 : 50;
+            }
 
             // Mock capacity calculation (in real implementation, this would check current allocations)
             const estimatedRequiredHours = resource.capacityHoursPerWeek * 0.5; // Assume 50% allocation
@@ -604,6 +640,40 @@ export default function ResourceAllocationStep({ register, errors, watch, setVal
     return allocatedResourceIds.size;
   };
 
+  const getFilteredAvailableResources = (blockId: string) => {
+    // Get currently allocated resources for this block
+    const currentBlock = projectRequirements.find(req => req.blockId === blockId);
+    const allocatedResourceIds = new Set(
+      currentBlock?.allocatedResources?.map(allocation => allocation.resourceId) || []
+    );
+
+    // Filter resources
+    return resources.filter(resource => {
+      // Exclude already allocated resources
+      if (allocatedResourceIds.has(resource.id)) {
+        return false;
+      }
+
+      // Apply search filter
+      if (resourceSearchTerm) {
+        const searchLower = resourceSearchTerm.toLowerCase();
+        const matchesName = resource.name.toLowerCase().includes(searchLower);
+        const matchesCode = resource.employeeCode.toLowerCase().includes(searchLower);
+        const matchesTeam = resource.homeTeam.toLowerCase().includes(searchLower);
+        const matchesSkills = resource.skills.some(skill => 
+          skill.skillName.toLowerCase().includes(searchLower) ||
+          skill.skillCategory.toLowerCase().includes(searchLower)
+        );
+        
+        if (!matchesName && !matchesCode && !matchesTeam && !matchesSkills) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -802,6 +872,88 @@ export default function ResourceAllocationStep({ register, errors, watch, setVal
                   </div>
                 </div>
               )}
+
+              {/* Manual Resource Selection */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h5 className="text-sm font-medium text-gray-700">Browse All Resources:</h5>
+                  <button
+                    type="button"
+                    onClick={() => setShowManualSelection(!showManualSelection)}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    {showManualSelection ? 'Hide' : 'Show'} Manual Selection
+                  </button>
+                </div>
+                
+                {showManualSelection && (
+                  <div className="border border-gray-200 rounded-md p-4 bg-gray-50">
+                    <div className="mb-3">
+                      <div className="flex items-center space-x-3">
+                        <Search className="h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Search resources by name, team, or skills..."
+                          value={resourceSearchTerm}
+                          onChange={(e) => setResourceSearchTerm(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {getFilteredAvailableResources(requirement.blockId).map((resource) => (
+                        <div key={resource.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-md">
+                          <div className="flex-1">
+                            <div className="flex items-center">
+                              <Users className="h-4 w-4 text-gray-400 mr-2" />
+                              <span className="font-medium text-gray-900">{resource.name}</span>
+                              <span className="text-sm text-gray-500 ml-2">({resource.employeeCode})</span>
+                              <span className="text-sm text-gray-500 ml-2">• {resource.homeTeam}</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {resource.skills.slice(0, 3).map((skill, index) => (
+                                <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800">
+                                  {skill.skillName} L{skill.level}
+                                </span>
+                              ))}
+                              {resource.skills.length > 3 && (
+                                <span className="text-xs text-gray-500">+{resource.skills.length - 3} more</span>
+                              )}
+                            </div>
+                            <div className="flex items-center mt-1 text-sm text-gray-600">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {resource.capacityHoursPerWeek}h/week capacity
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <label className="text-sm text-gray-700">Allocation:</label>
+                            <input
+                              type="range"
+                              min="10"
+                              max="100"
+                              step="10"
+                              defaultValue="50"
+                              className="w-20"
+                              onChange={(e) => {
+                                const percentage = parseInt(e.target.value);
+                                handleResourceAssignment(requirement.blockId, resource.id, percentage);
+                              }}
+                            />
+                            <span className="text-sm text-gray-500 w-10">50%</span>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {getFilteredAvailableResources(requirement.blockId).length === 0 && (
+                        <div className="text-center py-4 text-gray-500 text-sm">
+                          No available resources found. {resourceSearchTerm && 'Try adjusting your search terms.'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Resource Recommendations */}
               {recommendations && recommendations.recommendations.length > 0 && (
