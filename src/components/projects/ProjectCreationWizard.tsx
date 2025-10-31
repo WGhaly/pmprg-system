@@ -65,15 +65,15 @@ export default function ProjectCreationWizard({ isOpen, onClose, onSuccess }: Pr
   const getStepFields = (step: number): (keyof CreateProjectWizardInput)[] => {
     switch (step) {
       case 1:
-        return ['code', 'name', 'clientType', 'notes'];
+        return ['code', 'name']; // Only validate required fields for step 1
       case 2:
         return ['projectTypeId', 'tierId'];
       case 3:
         return ['priority', 'targetStartDate', 'mode'];
       case 4:
-        return ['resourceAllocations'];
+        return []; // Resource allocations are optional
       case 5:
-        return ['budgetCapex', 'budgetOpex'];
+        return []; // Budget fields are optional
       case 6:
         return [];
       default:
@@ -143,38 +143,114 @@ export default function ProjectCreationWizard({ isOpen, onClose, onSuccess }: Pr
   const onSubmit = async (data: CreateProjectWizardInput) => {
     setIsSubmitting(true);
 
-    // Use promiseToast for comprehensive project creation feedback
-    const projectCreationPromise = fetch('/api/projects', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    }).then(async (response) => {
-      const result = await response.json();
-
-      if (!response.ok) {
-        // Handle validation errors or other errors
-        console.error('Project creation failed:', result);
-        throw new Error(result.message || 'Failed to create project');
-      }
-
-      return result;
-    });
-
     try {
-      const result = await promiseToast(
+      // Step 1: Create the project
+      const projectCreationPromise = fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(async (response) => {
+        const result = await response.json();
+
+        if (!response.ok) {
+          // Handle validation errors or other errors
+          console.error('Project creation failed:', result);
+          throw new Error(result.message || 'Failed to create project');
+        }
+
+        return result;
+      });
+
+      const projectResult = await promiseToast(
         projectCreationPromise,
         {
           loading: 'Creating project...',
-          success: (data) => `Project "${data.name || data.code}" created successfully!`,
+          success: (data) => `Project "${data.project?.name || data.project?.code}" created successfully!`,
           error: (error) => error.message || 'Failed to create project',
         },
         {
-          successDuration: 4000,
+          successDuration: 2000,
           errorDuration: 8000,
         }
       );
+
+      // Step 2: Save resource allocations if any were specified
+      if (data.resourceAllocations && Object.keys(data.resourceAllocations).length > 0) {
+        const project = projectResult.project;
+        const projectBlocks = projectResult.projectBlocks;
+
+        // Transform resource allocations to API format
+        const allocations = [];
+        for (const [blockId, resourceAllocations] of Object.entries(data.resourceAllocations)) {
+          for (const [resourceId, allocationPercentage] of Object.entries(resourceAllocations)) {
+            if (allocationPercentage > 0) {
+              // Find the project block that corresponds to this tier block
+              const projectBlock = projectBlocks.find((pb: any) => pb.blockId === blockId);
+              if (projectBlock) {
+                // Calculate allocated hours per week (assuming 40 hour work week as base)
+                const allocatedHours = (allocationPercentage / 100) * 40;
+                
+                // Generate weeks for the project block duration
+                const weeks = [];
+                const startDate = new Date(projectBlock.plannedStart);
+                const endDate = new Date(projectBlock.plannedEnd);
+                
+                // Generate weekly allocations for the duration of the block
+                const currentDate = new Date(startDate);
+                while (currentDate <= endDate) {
+                  weeks.push(currentDate.toISOString());
+                  currentDate.setDate(currentDate.getDate() + 7); // Add 1 week
+                }
+
+                allocations.push({
+                  projectBlockId: projectBlock.id,
+                  resourceId,
+                  allocatedHours,
+                  weeks,
+                });
+              }
+            }
+          }
+        }
+
+        // Save allocations if we have any
+        if (allocations.length > 0) {
+          const allocationPromise = fetch('/api/allocations', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              projectId: project.id,
+              allocations,
+            }),
+          }).then(async (response) => {
+            const result = await response.json();
+
+            if (!response.ok) {
+              console.error('Allocation creation failed:', result);
+              throw new Error(result.message || 'Failed to save resource allocations');
+            }
+
+            return result;
+          });
+
+          await promiseToast(
+            allocationPromise,
+            {
+              loading: 'Saving resource allocations...',
+              success: (data) => `Saved ${data.allocations?.length || 0} resource allocations`,
+              error: (error) => error.message || 'Failed to save resource allocations',
+            },
+            {
+              successDuration: 3000,
+              errorDuration: 8000,
+            }
+          );
+        }
+      }
 
       // Success - Reset form and close wizard
       reset();

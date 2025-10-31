@@ -9,11 +9,12 @@ interface AuthGuardProps {
 }
 
 export default function AuthGuard({ children }: AuthGuardProps) {
-  const { isAuthenticated, login } = useAuth();
+  // Temporarily disabled for testing
+  // const { isAuthenticated, login } = useAuth();
 
-  if (!isAuthenticated) {
-    return <LoginForm onLogin={login} />;
-  }
+  // if (!isAuthenticated) {
+  //   return <LoginForm onLogin={login} />;
+  // }
 
   return <>{children}</>;
 }

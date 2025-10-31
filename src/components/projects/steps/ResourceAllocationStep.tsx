@@ -86,6 +86,8 @@ export default function ResourceAllocationStep({ register, errors, watch, setVal
   const [autoAssignMode, setAutoAssignMode] = useState(false);
   const [showManualSelection, setShowManualSelection] = useState(false);
   const [resourceSearchTerm, setResourceSearchTerm] = useState('');
+  // Debounced toast notifications to prevent spam
+  const [toastTimeouts, setToastTimeouts] = useState<Map<string, NodeJS.Timeout>>(new Map());
 
   // Toast hook for notifications
   const { toast, dismissToast } = useToast();
@@ -125,14 +127,22 @@ export default function ResourceAllocationStep({ register, errors, watch, setVal
     500 // 500ms debounce
   );
 
-  // Load resources and project requirements
+    // Cleanup timeouts when component unmounts
+  useEffect(() => {
+    return () => {
+      // Clear all pending toast timeouts
+      toastTimeouts.forEach(timeout => clearTimeout(timeout));
+    };
+  }, [toastTimeouts]);
+
+  // Load resources and requirements on mount
   useEffect(() => {
     if (projectTypeId && tierId) {
       loadResourcesAndRequirements();
     }
   }, [projectTypeId, tierId, targetStartDate, mode]);
 
-  // Monitor capacity validation changes and provide feedback
+  // Monitor capacity validation changes and provide feedback (debounced)
   useEffect(() => {
     if (!isValidating && validationResult && resourceAllocations && Object.keys(resourceAllocations).length > 0) {
       // Only show notifications if there are actual allocations to validate
@@ -140,30 +150,27 @@ export default function ResourceAllocationStep({ register, errors, watch, setVal
         Object.keys(blockAllocs).length > 0
       );
       
-      if (hasAllocations) {
-        if (validationResult.errors.length > 0) {
-          toast.error(
-            'Capacity validation failed',
-            `${validationResult.errors.length} capacity conflict${validationResult.errors.length > 1 ? 's' : ''} detected. Please review resource allocations.`
-          );
-        } else if (validationResult.warnings.length > 0) {
-          toast.warning(
-            'Capacity warnings detected',
-            `${validationResult.warnings.length} potential issue${validationResult.warnings.length > 1 ? 's' : ''} found. Consider adjusting allocations.`
-          );
-        } else {
-          // Only show success for meaningful validations
-          const totalAllocations = Object.values(resourceAllocations).reduce((total, blockAllocs) => 
-            total + Object.keys(blockAllocs).length, 0
-          );
-          if (totalAllocations > 0) {
-            toast.success(
-              'Capacity validation passed',
-              `All ${totalAllocations} resource allocation${totalAllocations > 1 ? 's are' : ' is'} within capacity limits`
+      // Debounce validation notifications to prevent spam
+      const validationTimeout = setTimeout(() => {
+        if (hasAllocations) {
+          if (validationResult.errors.length > 0) {
+            toast.error(
+              'Capacity validation failed',
+              `${validationResult.errors.length} capacity conflict${validationResult.errors.length > 1 ? 's' : ''} detected. Please review resource allocations.`,
+              { duration: 4000 }
+            );
+          } else if (validationResult.warnings.length > 0) {
+            toast.warning(
+              'Capacity warnings detected',
+              `${validationResult.warnings.length} potential issue${validationResult.warnings.length > 1 ? 's' : ''} found. Consider adjusting allocations.`,
+              { duration: 4000 }
             );
           }
+          // Remove automatic success notifications to reduce noise
         }
-      }
+      }, 1000); // Debounce validation notifications by 1 second
+      
+      return () => clearTimeout(validationTimeout);
     }
   }, [validationResult, isValidating, resourceAllocations, toast]);
 
@@ -179,7 +186,7 @@ export default function ResourceAllocationStep({ register, errors, watch, setVal
       if (resourcesResponse.ok) {
         resourcesData = await resourcesResponse.json();
         setResources(resourcesData);
-        toast.success(`Loaded ${resourcesData.length} available resources`);
+        // Removed toast notification to reduce noise - only show critical info
       } else {
         throw new Error('Failed to load resources');
       }
@@ -237,11 +244,14 @@ export default function ResourceAllocationStep({ register, errors, watch, setVal
         });
 
         setProjectRequirements(requirements);
-        toast.success(`Project structure loaded: ${requirements.length} blocks requiring resources`);
-
+        // Reduced verbosity - only show final completion message
+        
         // Generate resource recommendations for each block
         await generateResourceRecommendations(requirements, resourcesData);
         dismissToast(loadingToastId);
+        
+        // Show single completion message instead of multiple notifications
+        toast.success('Resource allocation ready', `${requirements.length} project blocks loaded with ${resourcesData.length} available resources`, { duration: 3000 });
       } else {
         throw new Error('Failed to load project preview');
       }
@@ -321,44 +331,72 @@ export default function ResourceAllocationStep({ register, errors, watch, setVal
   };
 
   const handleResourceAssignment = (blockId: string, resourceId: string, allocationPercentage: number) => {
+    const resource = resources.find(r => r.id === resourceId);
+    if (!resource) return;
+
+    let wasUpdate = false;
+    let resourceName = '';
+    let blockName = '';
+
     setProjectRequirements(prev => prev.map(req => {
       if (req.blockId === blockId) {
-        const resource = resources.find(r => r.id === resourceId);
-        if (resource) {
-          const hoursPerWeek = (resource.capacityHoursPerWeek * allocationPercentage) / 100;
-          
-          const existingAllocation = req.allocatedResources.find(ar => ar.resourceId === resourceId);
-          if (existingAllocation) {
-            // Update existing allocation
-            toast.success('Resource allocation updated', `${resource.name} allocation updated to ${allocationPercentage}%`);
-            return {
-              ...req,
-              allocatedResources: req.allocatedResources.map(ar =>
-                ar.resourceId === resourceId
-                  ? { ...ar, allocationPercentage, hoursPerWeek }
-                  : ar
-              ),
-            };
-          } else {
-            // Add new allocation
-            toast.success('Resource assigned', `${resource.name} assigned to ${req.blockName} at ${allocationPercentage}%`);
-            return {
-              ...req,
-              allocatedResources: [
-                ...req.allocatedResources,
-                {
-                  resourceId,
-                  resourceName: resource.name,
-                  allocationPercentage,
-                  hoursPerWeek,
-                },
-              ],
-            };
-          }
+        const hoursPerWeek = (resource.capacityHoursPerWeek * allocationPercentage) / 100;
+        const existingAllocation = req.allocatedResources.find(ar => ar.resourceId === resourceId);
+        
+        resourceName = resource.name;
+        blockName = req.blockName;
+        wasUpdate = !!existingAllocation;
+        
+        if (existingAllocation) {
+          // Update existing allocation
+          return {
+            ...req,
+            allocatedResources: req.allocatedResources.map(ar =>
+              ar.resourceId === resourceId
+                ? { ...ar, allocationPercentage, hoursPerWeek }
+                : ar
+            ),
+          };
+        } else {
+          // Add new allocation
+          return {
+            ...req,
+            allocatedResources: [
+              ...req.allocatedResources,
+              {
+                resourceId,
+                resourceName: resource.name,
+                allocationPercentage,
+                hoursPerWeek,
+              },
+            ],
+          };
         }
       }
       return req;
     }));
+
+    // Debounced toast notification to prevent spam when dragging sliders
+    const toastKey = `${blockId}-${resourceId}`;
+    const existingTimeout = toastTimeouts.get(toastKey);
+    
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+    
+    const newTimeout = setTimeout(() => {
+      // Only show toast if allocation percentage is greater than 0
+      if (allocationPercentage > 0) {
+        if (wasUpdate) {
+          toast.success('Resource allocation updated', `${resourceName} allocation updated to ${allocationPercentage}%`, { duration: 3000 });
+        } else {
+          toast.success('Resource assigned', `${resourceName} assigned to ${blockName} at ${allocationPercentage}%`, { duration: 3000 });
+        }
+      }
+      toastTimeouts.delete(toastKey);
+    }, 800); // Wait 800ms before showing toast to debounce rapid changes
+    
+    setToastTimeouts(prev => new Map(prev.set(toastKey, newTimeout)));
 
     // Update form values
     const currentAllocations = watch('resourceAllocations') || {};
@@ -913,7 +951,7 @@ export default function ResourceAllocationStep({ register, errors, watch, setVal
                             </div>
                             <div className="flex flex-wrap gap-1 mt-1">
                               {resource.skills.slice(0, 3).map((skill, index) => (
-                                <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800">
+                                <span key={`${resource.id}-skill-${skill.skillId || skill.skillCode || index}`} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800">
                                   {skill.skillName} L{skill.level}
                                 </span>
                               ))}

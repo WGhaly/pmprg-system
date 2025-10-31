@@ -73,28 +73,37 @@ export function useCapacityValidation(
         const result = await response.json();
         
         // Only update if this is the latest validation request
-        if (validationId === lastValidationId) {
-          setValidationResult(result);
-        }
+        setLastValidationId(currentId => {
+          if (validationId === currentId) {
+            setValidationResult(result);
+          }
+          return currentId;
+        });
       } catch (error) {
         console.error('Capacity validation error:', error);
-        if (validationId === lastValidationId) {
-          setValidationResult({
-            isValid: false,
-            warnings: [],
-            errors: ['Failed to validate resource capacity. Please try again.'],
-            suggestions: [],
-            resourceCapacities: [],
-            overallUtilization: 0,
-          });
-        }
+        setLastValidationId(currentId => {
+          if (validationId === currentId) {
+            setValidationResult({
+              isValid: false,
+              warnings: [],
+              errors: ['Failed to validate resource capacity. Please try again.'],
+              suggestions: [],
+              resourceCapacities: [],
+              overallUtilization: 0,
+            });
+          }
+          return currentId;
+        });
       } finally {
-        if (validationId === lastValidationId) {
-          setIsValidating(false);
-        }
+        setLastValidationId(currentId => {
+          if (validationId === currentId) {
+            setIsValidating(false);
+          }
+          return currentId;
+        });
       }
     }, debounceMs),
-    [debounceMs, lastValidationId]
+    [debounceMs] // Removed lastValidationId from dependencies
   );
 
   // Trigger validation when allocations or timeframe change

@@ -30,6 +30,21 @@ export async function GET() {
         tier: {
           select: { code: true, name: true },
         },
+        projectBlocks: {
+          include: {
+            block: {
+              select: { code: true, name: true },
+            },
+            allocations: {
+              include: {
+                resource: {
+                  select: { id: true, name: true, employeeCode: true },
+                },
+              },
+            },
+          },
+          orderBy: { sequenceIndex: 'asc' },
+        },
         _count: {
           select: { projectBlocks: true },
         },

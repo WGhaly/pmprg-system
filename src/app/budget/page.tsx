@@ -113,9 +113,9 @@ export default function BudgetPage() {
 
     const summary = projects.reduce((acc, project) => {
       const totalBudget = (project.budgetCapex || 0) + (project.budgetOpex || 0);
-      const totalSpent = project.projectBlocks.reduce((sum, block) => sum + (block.actualCost || 0), 0);
-      const totalAllocated = project.projectBlocks.reduce((sum, block) => 
-        sum + block.allocations.reduce((allocSum, alloc) => 
+      const totalSpent = (project.projectBlocks || []).reduce((sum, block) => sum + (block.actualCost || 0), 0);
+      const totalAllocated = (project.projectBlocks || []).reduce((sum, block) => 
+        sum + (block.allocations || []).reduce((allocSum, alloc) => 
           allocSum + (alloc.allocatedHours * (alloc.resource.monthlyRate / 160)), 0), 0
       );
 
@@ -157,12 +157,12 @@ export default function BudgetPage() {
   };
 
   const getProjectTotalSpent = (project: Project) => {
-    return project.projectBlocks.reduce((sum, block) => sum + (block.actualCost || 0), 0);
+    return (project.projectBlocks || []).reduce((sum, block) => sum + (block.actualCost || 0), 0);
   };
 
   const getProjectTotalAllocated = (project: Project) => {
-    return project.projectBlocks.reduce((sum, block) => 
-      sum + block.allocations.reduce((allocSum, alloc) => 
+    return (project.projectBlocks || []).reduce((sum, block) => 
+      sum + (block.allocations || []).reduce((allocSum, alloc) => 
         allocSum + (alloc.allocatedHours * (alloc.resource.monthlyRate / 160)), 0), 0
     );
   };

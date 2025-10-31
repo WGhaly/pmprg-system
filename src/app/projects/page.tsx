@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Building2, Plus, Calendar, Users, DollarSign, Home, Search, Filter } from 'lucide-react';
+import { Building2, Plus, Calendar, Users, DollarSign, Home, Search, Filter, Edit, Play, Pause, CheckCircle, MoreVertical, UserCheck } from 'lucide-react';
 import ProjectCreationWizard from '@/components/projects/ProjectCreationWizard';
 
 interface Project {
@@ -35,6 +35,9 @@ export default function ProjectsPage() {
   const [showWizard, setShowWizard] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [editingProject, setEditingProject] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [allocatingResources, setAllocatingResources] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProjects();
@@ -56,6 +59,95 @@ export default function ProjectsPage() {
 
   const handleProjectCreated = () => {
     fetchProjects();
+  };
+
+  const updateProjectStatus = async (projectId: string, newStatus: string) => {
+    setUpdatingStatus(projectId);
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        await fetchProjects(); // Refresh the projects list
+      } else {
+        console.error('Failed to update project status');
+      }
+    } catch (error) {
+      console.error('Error updating project status:', error);
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
+  const getStatusActions = (project: Project) => {
+    const actions = [];
+    
+    switch (project.status) {
+      case 'planning':
+        actions.push({
+          label: 'Start Project',
+          icon: Play,
+          action: () => updateProjectStatus(project.id, 'active'),
+          color: 'text-green-600 hover:text-green-800'
+        });
+        break;
+      case 'active':
+        actions.push({
+          label: 'Pause Project',
+          icon: Pause,
+          action: () => updateProjectStatus(project.id, 'on_hold'),
+          color: 'text-yellow-600 hover:text-yellow-800'
+        });
+        actions.push({
+          label: 'Complete Project',
+          icon: CheckCircle,
+          action: () => updateProjectStatus(project.id, 'completed'),
+          color: 'text-green-600 hover:text-green-800'
+        });
+        break;
+      case 'on_hold':
+        actions.push({
+          label: 'Resume Project',
+          icon: Play,
+          action: () => updateProjectStatus(project.id, 'active'),
+          color: 'text-green-600 hover:text-green-800'
+        });
+        break;
+    }
+    
+    return actions;
+  };
+
+  const allocateResources = async (projectId: string) => {
+    setAllocatingResources(projectId);
+    try {
+      const response = await fetch(`/api/projects/${projectId}/allocate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Resources allocated:', result);
+        alert(`Successfully allocated resources! Created ${result.allocations?.allocations?.length || 0} allocations.`);
+      } else {
+        const error = await response.json();
+        console.error('Failed to allocate resources:', error);
+        alert('Failed to allocate resources. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error allocating resources:', error);
+      alert('Error allocating resources. Please try again.');
+    } finally {
+      setAllocatingResources(null);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -242,24 +334,66 @@ export default function ProjectsPage() {
                               </div>
                             </div>
                             
-                            <div className="mt-2 flex items-center text-sm text-gray-500 space-x-6">
-                              <div className="flex items-center">
-                                <Calendar className="h-4 w-4 mr-1" />
-                                Start: {formatDate(project.targetStartDate)}
-                              </div>
-                              <div className="flex items-center">
-                                <Users className="h-4 w-4 mr-1" />
-                                {project._count.projectBlocks} blocks
-                              </div>
-                              <div className="flex items-center">
-                                <span className="capitalize">{project.mode.replace('_', ' ')}</span>
-                              </div>
-                              {totalBudget > 0 && (
+                            <div className="mt-2 flex items-center justify-between">
+                              <div className="flex items-center text-sm text-gray-500 space-x-6">
                                 <div className="flex items-center">
-                                  <DollarSign className="h-4 w-4 mr-1" />
-                                  {formatCurrency(totalBudget)}
+                                  <Calendar className="h-4 w-4 mr-1" />
+                                  Start: {formatDate(project.targetStartDate)}
                                 </div>
-                              )}
+                                <div className="flex items-center">
+                                  <Users className="h-4 w-4 mr-1" />
+                                  {project._count.projectBlocks} blocks
+                                </div>
+                                <div className="flex items-center">
+                                  <span className="capitalize">{project.mode.replace('_', ' ')}</span>
+                                </div>
+                                {totalBudget > 0 && (
+                                  <div className="flex items-center">
+                                    <DollarSign className="h-4 w-4 mr-1" />
+                                    {formatCurrency(totalBudget)}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Action Buttons */}
+                              <div className="flex items-center space-x-2">
+                                {getStatusActions(project).map((action, index) => (
+                                  <button
+                                    key={index}
+                                    onClick={action.action}
+                                    disabled={updatingStatus === project.id}
+                                    className={`p-2 rounded-full ${action.color} hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                    title={action.label}
+                                  >
+                                    {updatingStatus === project.id ? (
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                    ) : (
+                                      <action.icon className="h-4 w-4" />
+                                    )}
+                                  </button>
+                                ))}
+                                
+                                <button
+                                  onClick={() => allocateResources(project.id)}
+                                  disabled={allocatingResources === project.id}
+                                  className="p-2 rounded-full text-blue-600 hover:text-blue-800 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title="Allocate Resources"
+                                >
+                                  {allocatingResources === project.id ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                  ) : (
+                                    <UserCheck className="h-4 w-4" />
+                                  )}
+                                </button>
+                                
+                                <button
+                                  onClick={() => setEditingProject(project.id)}
+                                  className="p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                                  title="Edit Project"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>

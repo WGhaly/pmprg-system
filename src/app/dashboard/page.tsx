@@ -199,8 +199,8 @@ export default function DashboardPage() {
       sum + (resource.active ? resource.capacityHoursPerWeek : 0), 0);
     
     const totalAllocated = projects.reduce((sum, project) => 
-      sum + project.projectBlocks.reduce((blockSum, block) => 
-        blockSum + block.allocations.reduce((allocSum, alloc) => 
+      sum + (project.projectBlocks || []).reduce((blockSum, block) => 
+        blockSum + (block.allocations || []).reduce((allocSum, alloc) => 
           allocSum + alloc.allocatedHours, 0), 0), 0);
 
     const averageUtilization = totalCapacity > 0 ? (totalAllocated / totalCapacity) * 100 : 0;
@@ -208,8 +208,8 @@ export default function DashboardPage() {
     // Calculate resource efficiency categories
     const resourceUtilization = resources.map(resource => {
       const allocated = projects.reduce((sum, project) => 
-        sum + project.projectBlocks.reduce((blockSum, block) => 
-          blockSum + block.allocations
+        sum + (project.projectBlocks || []).reduce((blockSum, block) => 
+          blockSum + (block.allocations || [])
             .filter(alloc => alloc.resource.employeeCode === resource.employeeCode)
             .reduce((allocSum, alloc) => allocSum + alloc.allocatedHours, 0), 0), 0);
       
@@ -226,22 +226,22 @@ export default function DashboardPage() {
     // Calculate Project Delivery Performance
     const activeProjects = projects.filter(p => p.status === 'active' || p.status === 'completed');
     const onTimeProjects = activeProjects.filter(p => {
-      const hasDelayedBlocks = p.projectBlocks.some(block => block.status === 'delayed');
+      const hasDelayedBlocks = (p.projectBlocks || []).some(block => block.status === 'delayed');
       return !hasDelayedBlocks && p.status === 'completed';
     }).length;
 
     const atRiskProjects = activeProjects.filter(p => 
-      p.projectBlocks.some(block => block.status === 'at_risk')).length;
+      (p.projectBlocks || []).some(block => block.status === 'at_risk')).length;
     
     const delayedProjects = activeProjects.filter(p => 
-      p.projectBlocks.some(block => block.status === 'delayed')).length;
+      (p.projectBlocks || []).some(block => block.status === 'delayed')).length;
 
     const onTimePercentage = activeProjects.length > 0 ? (onTimeProjects / activeProjects.length) * 100 : 0;
 
     // Calculate Budget Performance
     const totalBudget = projects.reduce((sum, p) => sum + (p.budgetCapex || 0) + (p.budgetOpex || 0), 0);
     const totalSpent = projects.reduce((sum, p) => 
-      sum + p.projectBlocks.reduce((blockSum, block) => blockSum + (block.actualCost || 0), 0), 0);
+      sum + (p.projectBlocks || []).reduce((blockSum, block) => blockSum + (block.actualCost || 0), 0), 0);
     const budgetVariance = totalBudget - totalSpent;
     const budgetVariancePercentage = totalBudget > 0 ? (budgetVariance / totalBudget) * 100 : 0;
 
@@ -303,13 +303,13 @@ export default function DashboardPage() {
   const budgetTrendData = projects.map(project => ({
     name: project.code,
     budget: (project.budgetCapex || 0) + (project.budgetOpex || 0),
-    spent: project.projectBlocks.reduce((sum, block) => sum + (block.actualCost || 0), 0),
+    spent: (project.projectBlocks || []).reduce((sum, block) => sum + (block.actualCost || 0), 0),
     variance: ((project.budgetCapex || 0) + (project.budgetOpex || 0)) - 
-              project.projectBlocks.reduce((sum, block) => sum + (block.actualCost || 0), 0)
+              (project.projectBlocks || []).reduce((sum, block) => sum + (block.actualCost || 0), 0)
   }));
 
   const skillsData = resources.reduce((acc, resource) => {
-    resource.resourceSkills.forEach(rs => {
+    (resource.resourceSkills || []).forEach(rs => {
       const category = rs.skill.category;
       const existing = acc.find(item => item.name === category);
       if (existing) {
