@@ -90,56 +90,62 @@ export async function POST(
       }
     }
 
-    // Create allocations directly in database transaction
+    // Prepare all allocation records to create
+    const allocationRecords: Array<{
+      projectId: string;
+      projectBlockId: string;
+      resourceId: string;
+      weekStartDate: Date;
+      allocatedHours: number;
+    }> = [];
+    
+    for (const allocation of allocationsToCreate) {
+      for (const weekStart of allocation.weeks) {
+        allocationRecords.push({
+          projectId: projectId,
+          projectBlockId: allocation.projectBlockId,
+          resourceId: allocation.resourceId,
+          weekStartDate: new Date(weekStart),
+          allocatedHours: allocation.allocatedHours,
+        });
+      }
+    }
+
+    // Use bulk insert with createMany for better performance
     const createdAllocations = await prisma.$transaction(async (tx) => {
-      const results = [];
-      
-      for (const allocation of allocationsToCreate) {
-        // Create allocations for each week
-        for (const weekStart of allocation.weeks) {
-          const existingAllocation = await tx.allocation.findUnique({
-            where: {
-              projectBlockId_resourceId_weekStartDate: {
-                projectBlockId: allocation.projectBlockId,
-                resourceId: allocation.resourceId,
-                weekStartDate: new Date(weekStart),
+      // Delete any existing allocations for this project first
+      await tx.allocation.deleteMany({
+        where: { projectId: projectId },
+      });
+
+      // Create all allocations in bulk
+      await tx.allocation.createMany({
+        data: allocationRecords,
+      });
+
+      // Fetch the created allocations with relations for response
+      const results = await tx.allocation.findMany({
+        where: { projectId: projectId },
+        include: {
+          resource: {
+            select: {
+              id: true,
+              name: true,
+              employeeCode: true,
+            },
+          },
+          projectBlock: {
+            include: {
+              block: {
+                select: { code: true, name: true },
               },
             },
-          });
-
-          if (!existingAllocation) {
-            const newAllocation = await tx.allocation.create({
-              data: {
-                projectId: projectId,
-                projectBlockId: allocation.projectBlockId,
-                resourceId: allocation.resourceId,
-                weekStartDate: new Date(weekStart),
-                allocatedHours: allocation.allocatedHours,
-              },
-              include: {
-                resource: {
-                  select: {
-                    id: true,
-                    name: true,
-                    employeeCode: true,
-                  },
-                },
-                projectBlock: {
-                  include: {
-                    block: {
-                      select: { code: true, name: true },
-                    },
-                  },
-                },
-              },
-            });
-            results.push(newAllocation);
-          }
-        }
-      }
+          },
+        },
+      });
       
       return results;
-    });
+    }, { timeout: 10000 }); // Increase timeout to 10 seconds
 
     return NextResponse.json({
       message: 'Resources successfully allocated to project',

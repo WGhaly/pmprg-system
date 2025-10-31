@@ -1,0 +1,71 @@
+
+> pmprg@1.0.0 dev
+> next dev
+
+ ⚠ Port 3000 is in use, trying 3001 instead.
+ ⚠ Port 3001 is in use, trying 3002 instead.
+ ⚠ Port 3002 is in use, trying 3003 instead.
+  ▲ Next.js 14.2.33
+  - Local:        http://localhost:3003
+  - Environments: .env
+  - Experiments (use with caution):
+    · typedRoutes
+
+ ✓ Starting...
+ ✓ Ready in 1542ms
+ ✓ Compiled /api/projects/[id]/allocate in 157ms (58 modules)
+prisma:warn In production, we recommend using `prisma generate --no-engine` (See: `prisma generate --help`)
+prisma:warn In production, we recommend using `prisma generate --no-engine` (See: `prisma generate --help`)
+Error auto-allocating resources: PrismaClientKnownRequestError: 
+Invalid `prisma.allocation.create()` invocation:
+
+
+Transaction API error: Transaction already closed: A query cannot be executed on an expired transaction. The timeout for this transaction was 5000 ms, however 5177 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction.
+    at $n.handleRequestError (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/@prisma/client/runtime/library.js:121:7315)
+    at $n.handleAndLogRequestError (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async l (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async eval (webpack-internal:///(rsc)/./src/app/api/projects/[id]/allocate/route.ts:110:47)
+    at async Proxy._transactionWithCallback (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/@prisma/client/runtime/library.js:130:8000)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/projects/[id]/allocate/route.ts:95:36)
+    at async /Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/base-server.js:1576:40)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  code: 'P2028',
+  clientVersion: '5.22.0',
+  meta: {
+    modelName: 'Allocation',
+    error: 'Transaction already closed: A query cannot be executed on an expired transaction. The timeout for this transaction was 5000 ms, however 5177 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction.'
+  }
+}
+ POST /api/projects/cmhfatu9l003l6m0v6rzlj3xs/allocate 500 in 7447ms
+ ✓ Compiled in 243ms (58 modules)
+ ✓ Compiled in 118ms (58 modules)
+prisma:warn In production, we recommend using `prisma generate --no-engine` (See: `prisma generate --help`)
+ POST /api/projects/cmhfatu9l003l6m0v6rzlj3xs/allocate 200 in 3147ms
+ ○ Compiling /schedule ...
+ ✓ Compiled /schedule in 2.2s (637 modules)
+ GET /schedule?id=bf88a221-ddb9-4794-a26e-64cfb2d42f2f&vscodeBrowserReqId=1761943601268 200 in 2281ms
+ ✓ Compiled /api/resources in 57ms (337 modules)
+ ✓ Compiled (339 modules)
+ GET /api/resources 200 in 1038ms
+ GET /api/projects 200 in 1353ms
+ GET /api/resources 200 in 527ms
+ GET /api/projects 200 in 896ms
+ GET /api/projects 200 in 527ms
