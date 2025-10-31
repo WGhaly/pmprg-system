@@ -69,3 +69,56 @@ prisma:warn In production, we recommend using `prisma generate --no-engine` (See
  GET /api/resources 200 in 527ms
  GET /api/projects 200 in 896ms
  GET /api/projects 200 in 527ms
+ GET /api/projects 200 in 513ms
+ ✓ Compiled in 842ms (596 modules)
+ ✓ Compiled in 466ms (596 modules)
+ ✓ Compiled in 617ms (596 modules)
+ ⨯ SyntaxError: Unexpected end of JSON input
+    at JSON.parse (<anonymous>)
+    at loadManifest (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/load-manifest.js:36:25)
+    at DevServer.getNextFontManifest (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/next-server.js:750:47)
+    at DevServer.findPageComponents (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/dev/next-dev-server.js:571:43)
+    at async DevServer.renderPageComponent (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/base-server.js:1910:24)
+    at async DevServer.renderToResponseImpl (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  page: '/schedule'
+}
+ ✓ Compiled /_error in 443ms (809 modules)
+ GET /schedule?id=bf88a221-ddb9-4794-a26e-64cfb2d42f2f&vscodeBrowserReqId=1761943601268 200 in 37ms
+ ✓ Compiled /_not-found in 216ms (812 modules)
+ GET /_next/static/chunks/main-app.js?v=1761943855518 404 in 262ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 261ms
+ ✓ Compiled in 416ms (826 modules)
+ ⨯ TypeError: e[o] is not a function
+    at Object.t [as require] (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/.next/server/webpack-runtime.js:1:142)
+    at JSON.parse (<anonymous>)
+digest: "1750247744"
+TypeError: e[o] is not a function
+    at Object.t [as require] (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/.next/server/webpack-runtime.js:1:142)
+    at require (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:16:18839)
+    at I (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94364)
+    at /Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:96670
+    at F._fromJSON (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:97108)
+    at JSON.parse (<anonymous>)
+    at O (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94085)
+    at t (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:100584)
+ ⨯ TypeError: e[o] is not a function
+    at Object.t [as require] (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/.next/server/webpack-runtime.js:1:142)
+    at require (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:16:18839)
+    at I (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94364)
+    at /Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:96670
+    at F._fromJSON (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:97108)
+    at JSON.parse (<anonymous>)
+    at O (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94085)
+    at t (/Users/waseemghaly/Documents/PRG/Emad/VS Projects/PM PRG/Application/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:100584)
+ GET /admin?id=6d311349-fe0f-4a7e-8114-21dfb3f49964&vscodeBrowserReqId=1761943877892 500 in 571ms
+[?25h

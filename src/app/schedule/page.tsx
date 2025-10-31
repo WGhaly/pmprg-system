@@ -156,85 +156,97 @@ const ResourceUtilizationTimeline = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 overflow-x-auto">
       {/* Timeline Header */}
-      <div className="grid grid-cols-12 gap-2 text-sm font-medium text-gray-700 border-b pb-2">
-        <div className="col-span-3">Resource</div>
-        {timePeriods.slice(0, 9).map((period, index) => (
-          <div key={period} className="text-center">
-            {viewMode === 'week' ? `W${index + 1}` : 
-             viewMode === 'month' ? new Date(period).toLocaleDateString('en', { month: 'short' }) :
-             new Date(period).getFullYear()}
-          </div>
-        ))}
-      </div>
-
-      {/* Resource Rows */}
-      {utilizations.map((resourceUtil) => (
-        <div key={resourceUtil.resourceId} className="grid grid-cols-12 gap-2 items-center py-2 hover:bg-gray-50 rounded">
-          {/* Resource Info */}
-          <div className="col-span-3 flex items-center space-x-2">
-            <div>
-              <div className="font-medium text-gray-900">{resourceUtil.resource.name}</div>
-              <div className="text-sm text-gray-500">{resourceUtil.resource.employeeCode}</div>
-              <div className="text-xs text-gray-400">{resourceUtil.resource.homeTeam}</div>
-            </div>
-            <div className="flex items-center space-x-1">
-              {resourceUtil.isOverutilized && (
-                <Badge variant="destructive" className="text-xs">
-                  Over {Math.round(resourceUtil.peakUtilization)}%
-                </Badge>
-              )}
-              {resourceUtil.isUnderutilized && (
-                <Badge variant="outline" className="text-xs">
-                  Under {Math.round(resourceUtil.averageUtilization)}%
-                </Badge>
-              )}
-            </div>
-          </div>
-
-          {/* Utilization Periods */}
-          {resourceUtil.periods.slice(0, 9).map((period, index) => (
-            <div 
-              key={index}
-              className="relative h-12 rounded cursor-pointer"
-              onClick={() => {
-                setSelectedResource(resourceUtil.resourceId);
-                setSelectedPeriod(period.startDate);
-              }}
-            >
-              <div 
-                className={`h-full rounded ${getUtilizationColor(period.utilizationPercentage)} opacity-80`}
-                style={{ 
-                  height: `${Math.min(period.utilizationPercentage, 100)}%`,
-                  minHeight: period.utilizationPercentage > 0 ? '8px' : '0'
-                }}
-              >
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs font-medium text-white">
-                    {Math.round(period.utilizationPercentage)}%
-                  </span>
-                  {getUtilizationIcon(period.utilizationPercentage)}
-                </div>
-              </div>
-              
-              {/* Project tooltips on hover */}
-              {period.projects.length > 0 && (
-                <div className="absolute bottom-0 left-0 right-0 opacity-0 hover:opacity-100 transition-opacity">
-                  <div className="bg-black text-white text-xs p-1 rounded shadow-lg">
-                    {period.projects.map(proj => (
-                      <div key={proj.projectId} className="flex justify-between">
-                        <span>{proj.projectCode}</span>
-                        <span>{proj.hours}h</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+      <div className="min-w-[800px]">
+        <div className="grid grid-cols-12 gap-2 text-sm font-medium text-gray-700 border-b pb-2">
+          <div className="col-span-3 min-w-[200px]">Resource</div>
+          {timePeriods.slice(0, 9).map((period, index) => (
+            <div key={period} className="text-center min-w-[60px]">
+              {viewMode === 'week' ? `W${index + 1}` : 
+               viewMode === 'month' ? new Date(period).toLocaleDateString('en', { month: 'short' }) :
+               new Date(period).getFullYear()}
             </div>
           ))}
         </div>
-      ))}
+
+        {/* Resource Rows */}
+        {utilizations.map((resourceUtil) => (
+          <div key={resourceUtil.resourceId} className="grid grid-cols-12 gap-2 items-center py-2 hover:bg-gray-50 rounded">
+            {/* Resource Info */}
+            <div className="col-span-3 min-w-[200px] flex items-center space-x-2">
+              <div className="flex-1">
+                <div className="font-medium text-gray-900 truncate">{resourceUtil.resource.name}</div>
+                <div className="text-sm text-gray-500">{resourceUtil.resource.employeeCode}</div>
+                <div className="text-xs text-gray-400 truncate">{resourceUtil.resource.homeTeam}</div>
+              </div>
+              <div className="flex flex-col space-y-1">
+                {resourceUtil.isOverutilized && (
+                  <Badge variant="destructive" className="text-xs whitespace-nowrap">
+                    Over {Math.round(resourceUtil.peakUtilization)}%
+                  </Badge>
+                )}
+                {resourceUtil.isUnderutilized && (
+                  <Badge variant="outline" className="text-xs whitespace-nowrap">
+                    Under {Math.round(resourceUtil.averageUtilization)}%
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Utilization Periods */}
+            {resourceUtil.periods.slice(0, 9).map((period, index) => (
+              <div 
+                key={index}
+                className="relative min-w-[60px] h-16 bg-gray-100 rounded cursor-pointer border border-gray-200 hover:border-gray-300 transition-colors"
+                onClick={() => {
+                  setSelectedResource(resourceUtil.resourceId);
+                  setSelectedPeriod(period.startDate);
+                }}
+              >
+                {period.utilizationPercentage > 0 ? (
+                  <>
+                    <div 
+                      className={`absolute bottom-0 left-0 right-0 rounded-b ${getUtilizationColor(period.utilizationPercentage)} transition-all duration-300`}
+                      style={{ 
+                        height: `${Math.min(period.utilizationPercentage, 100)}%`,
+                        minHeight: '12px'
+                      }}
+                    />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-1">
+                      <span className="text-xs font-semibold text-gray-900 bg-white bg-opacity-90 px-1 rounded shadow-sm">
+                        {Math.round(period.utilizationPercentage)}%
+                      </span>
+                      {getUtilizationIcon(period.utilizationPercentage)}
+                    </div>
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xs text-gray-400">0%</span>
+                  </div>
+                )}
+                
+                {/* Project tooltips on hover */}
+                {period.projects.length > 0 && (
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 opacity-0 hover:opacity-100 transition-opacity z-10">
+                    <div className="bg-black text-white text-xs p-2 rounded shadow-lg whitespace-nowrap max-w-xs">
+                      <div className="font-semibold mb-1">
+                        {period.allocatedHours}h / {period.capacityHours}h
+                      </div>
+                      {period.projects.map(proj => (
+                        <div key={proj.projectId} className="flex justify-between space-x-2">
+                          <span className="truncate">{proj.projectCode}</span>
+                          <span>{proj.hours}h</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
 
       {/* Optimization Panel */}
       <Card className="mt-6">
@@ -734,13 +746,13 @@ export default function SchedulePage() {
 
         {/* Timeline Controls */}
         <div className="bg-white shadow rounded-lg mb-6">
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+          <div className="p-4 md:p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
+              <div className="flex items-center space-x-2 md:space-x-4">
                 <Button variant="outline" size="sm" onClick={() => navigateTime('prev')}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <h2 className="text-lg font-medium text-gray-900">
+                <h2 className="text-lg font-medium text-gray-900 min-w-0">
                   {viewMode === 'week' && `Week of ${currentDate.toLocaleDateString()}`}
                   {viewMode === 'month' && currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                   {viewMode === 'year' && currentDate.getFullYear()}
@@ -749,24 +761,28 @@ export default function SchedulePage() {
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                 {/* Display Mode Toggle */}
                 <div className="flex items-center space-x-2">
                   <Button
                     variant={displayMode === 'utilization' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setDisplayMode('utilization')}
+                    className="flex-1 sm:flex-none"
                   >
                     <Users className="h-4 w-4 mr-1" />
-                    Resource Utilization
+                    <span className="hidden sm:inline">Resource Utilization</span>
+                    <span className="sm:hidden">Utilization</span>
                   </Button>
                   <Button
                     variant={displayMode === 'timeline' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setDisplayMode('timeline')}
+                    className="flex-1 sm:flex-none"
                   >
                     <Calendar className="h-4 w-4 mr-1" />
-                    Project Timeline
+                    <span className="hidden sm:inline">Project Timeline</span>
+                    <span className="sm:hidden">Timeline</span>
                   </Button>
                 </div>
                 
@@ -776,6 +792,7 @@ export default function SchedulePage() {
                     variant={viewMode === 'week' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setViewMode('week')}
+                    className="flex-1 sm:flex-none"
                   >
                     Week
                   </Button>
@@ -783,6 +800,7 @@ export default function SchedulePage() {
                     variant={viewMode === 'month' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setViewMode('month')}
+                    className="flex-1 sm:flex-none"
                   >
                     Month
                   </Button>
@@ -790,6 +808,7 @@ export default function SchedulePage() {
                     variant={viewMode === 'year' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setViewMode('year')}
+                    className="flex-1 sm:flex-none"
                   >
                     Year
                   </Button>
@@ -801,9 +820,9 @@ export default function SchedulePage() {
 
         {/* Main Content - Conditional Rendering */}
         {displayMode === 'utilization' ? (
-          <div className="bg-white shadow rounded-lg">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
+          <div className="bg-white shadow rounded-lg overflow-hidden">
+            <div className="p-4 md:p-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 space-y-2 md:space-y-0">
                 <h3 className="text-lg font-medium text-gray-900">Resource Utilization Timeline</h3>
                 <div className="flex items-center space-x-4">
                   <div className="text-sm text-gray-600">
@@ -813,14 +832,16 @@ export default function SchedulePage() {
                 </div>
               </div>
               
-              <ResourceUtilizationTimeline
-                utilizations={utilizations}
-                projects={projects}
-                timePeriods={generateTimeScale().map(d => d.toISOString())}
-                viewMode={viewMode}
-                onProjectDateChange={handleProjectDateChange}
-                onShowRecommendations={generateRecommendations}
-              />
+              <div className="overflow-x-auto">
+                <ResourceUtilizationTimeline
+                  utilizations={utilizations}
+                  projects={projects}
+                  timePeriods={generateTimeScale().map(d => d.toISOString())}
+                  viewMode={viewMode}
+                  onProjectDateChange={handleProjectDateChange}
+                  onShowRecommendations={generateRecommendations}
+                />
+              </div>
               
               {/* Recommendations Panel */}
               {recommendations.length > 0 && (
@@ -929,7 +950,7 @@ export default function SchedulePage() {
         )}
 
         {/* Schedule Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
